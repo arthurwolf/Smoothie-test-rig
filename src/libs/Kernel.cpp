@@ -19,12 +19,6 @@
 #include "libs/StepTicker.h"
 #include "libs/PublicData.h"
 #include "modules/communication/SerialConsole.h"
-#include "modules/communication/GcodeDispatch.h"
-#include "modules/robot/Planner.h"
-#include "modules/robot/Robot.h"
-#include "modules/robot/Stepper.h"
-#include "modules/robot/Conveyor.h"
-#include "modules/robot/Pauser.h"
 
 #include <malloc.h>
 #include <array>
@@ -129,15 +123,6 @@ Kernel::Kernel(){
     this->step_ticker->set_reset_delay( microseconds_per_step_pulse );
     this->step_ticker->set_frequency( this->base_stepping_frequency );
     this->step_ticker->set_acceleration_ticks_per_second(acceleration_ticks_per_second); // must be set after set_frequency
-
-    // Core modules
-    this->add_module( new GcodeDispatch() );
-    this->add_module( this->robot          = new Robot()         );
-    this->add_module( this->stepper        = new Stepper()       );
-    this->add_module( this->conveyor       = new Conveyor()      );
-    this->add_module( this->pauser         = new Pauser()        );
-
-    this->planner = new Planner();
 
 }
 

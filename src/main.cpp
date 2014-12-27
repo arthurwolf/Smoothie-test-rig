@@ -7,24 +7,9 @@
 
 #include "libs/Kernel.h"
 
-#include "modules/tools/laser/Laser.h"
-#include "modules/tools/spindle/Spindle.h"
-#include "modules/tools/extruder/ExtruderMaker.h"
-#include "modules/tools/temperaturecontrol/TemperatureControlPool.h"
-#include "modules/tools/endstops/Endstops.h"
-#include "modules/tools/zprobe/ZProbe.h"
-#include "modules/tools/scaracal/SCARAcal.h"
-#include "modules/tools/switch/SwitchPool.h"
-#include "modules/tools/temperatureswitch/TemperatureSwitch.h"
-
-#include "modules/robot/Conveyor.h"
 #include "modules/utils/simpleshell/SimpleShell.h"
 #include "modules/utils/configurator/Configurator.h"
 #include "modules/utils/currentcontrol/CurrentControl.h"
-#include "modules/utils/player/Player.h"
-#include "modules/utils/pausebutton/PauseButton.h"
-#include "modules/utils/PlayLed/PlayLed.h"
-#include "modules/utils/panel/Panel.h"
 #include "libs/Network/uip/Network.h"
 #include "Config.h"
 #include "checksumm.h"
@@ -45,7 +30,6 @@
 #include "libs/USBDevice/DFU.h"
 #include "libs/SDFAT.h"
 #include "StreamOutputPool.h"
-#include "ToolManager.h"
 
 #include "libs/Watchdog.h"
 
@@ -133,56 +117,9 @@ void init() {
     kernel->add_module( new SimpleShell() );
     kernel->add_module( new Configurator() );
     kernel->add_module( new CurrentControl() );
-    kernel->add_module( new PauseButton() );
-    kernel->add_module( new PlayLed() );
-    kernel->add_module( new Endstops() );
-    kernel->add_module( new Player() );
 
-
-    // these modules can be completely disabled in the Makefile by adding to EXCLUDE_MODULES
-    #ifndef NO_TOOLS_SWITCH
-    SwitchPool *sp= new SwitchPool();
-    sp->load_tools();
-    delete sp;
-    #endif
-    #ifndef NO_TOOLS_EXTRUDER
-    // NOTE this must be done first before Temperature control so ToolManager can handle Tn before temperaturecontrol module does
-    ExtruderMaker *em= new ExtruderMaker();
-    em->load_tools();
-    delete em;
-    #endif
-    #ifndef NO_TOOLS_TEMPERATURECONTROL
-    // Note order is important here must be after extruder so Tn as a parameter will get executed first
-    TemperatureControlPool *tp= new TemperatureControlPool();
-    tp->load_tools();
-    kernel->temperature_control_pool= tp;
-    #else
-    kernel->temperature_control_pool= new TemperatureControlPool(); // so we can get just an empty temperature control array
-    #endif
-    #ifndef NO_TOOLS_LASER
-    kernel->add_module( new Laser() );
-    #endif
-    #ifndef NO_TOOLS_SPINDLE
-    kernel->add_module( new Spindle() );
-    #endif
-    #ifndef NO_UTILS_PANEL
-    kernel->add_module( new Panel() );
-    #endif
-    #ifndef NO_TOOLS_TOUCHPROBE
-    kernel->add_module( new Touchprobe() );
-    #endif
-    #ifndef NO_TOOLS_ZPROBE
-    kernel->add_module( new ZProbe() );
-    #endif
-    #ifndef NO_TOOLS_SCARACAL
-    kernel->add_module( new SCARAcal() );
-    #endif
     #ifndef NONETWORK
     kernel->add_module( new Network() );
-    #endif
-    #ifndef NO_TOOLS_TEMPERATURESWITCH
-    // Must be loaded after TemperatureControlPool
-    kernel->add_module( new TemperatureSwitch() );
     #endif
 
     // Create and initialize USB stuff

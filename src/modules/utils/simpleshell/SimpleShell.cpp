@@ -12,7 +12,6 @@
 #include "libs/utils.h"
 #include "libs/SerialMessage.h"
 #include "libs/StreamOutput.h"
-#include "modules/robot/Conveyor.h"
 #include "DirHandle.h"
 #include "mri.h"
 #include "version.h"
@@ -20,14 +19,11 @@
 #include "FileStream.h"
 #include "checksumm.h"
 #include "PublicData.h"
-#include "Gcode.h"
+//#include "Gcode.h"
 //#include "StepTicker.h"
 
-#include "modules/tools/temperaturecontrol/TemperatureControlPublicAccess.h"
-#include "modules/robot/RobotPublicAccess.h"
 #include "NetworkPublicAccess.h"
 #include "platform_memory.h"
-#include "SwitchPublicAccess.h"
 #include "SDFAT.h"
 
 #include "system_LPC17xx.h"
@@ -151,37 +147,6 @@ void SimpleShell::on_second_tick(void *)
 
 void SimpleShell::on_gcode_received(void *argument)
 {
-    Gcode *gcode = static_cast<Gcode *>(argument);
-    string args = get_arguments(gcode->get_command());
-
-    if (gcode->has_m) {
-        if (gcode->m == 20) { // list sd card
-            gcode->mark_as_taken();
-            gcode->stream->printf("Begin file list\r\n");
-            ls_command("/sd", gcode->stream);
-            gcode->stream->printf("End file list\r\n");
-
-        } else if (gcode->m == 30) { // remove file
-            gcode->mark_as_taken();
-            rm_command("/sd/" + args, gcode->stream);
-
-        } else if(gcode->m == 501) { // load config override
-            gcode->mark_as_taken();
-            if(args.empty()) {
-                load_command("/sd/config-override", gcode->stream);
-            } else {
-                load_command("/sd/config-override." + args, gcode->stream);
-            }
-
-        } else if(gcode->m == 504) { // save to specific config override file
-            gcode->mark_as_taken();
-            if(args.empty()) {
-                save_command("/sd/config-override", gcode->stream);
-            } else {
-                save_command("/sd/config-override." + args, gcode->stream);
-            }
-        }
-    }
 }
 
 bool SimpleShell::parse_command(const char *cmd, string args, StreamOutput *stream)
@@ -345,11 +310,11 @@ void SimpleShell::upload_command( string parameters, StreamOutput *stream )
 {
     // this needs to be a hack. it needs to read direct from serial and not allow on_main_loop run until done
     // NOTE this will block all operation until the upload is complete, so do not do while printing
-    if(!THEKERNEL->conveyor->is_queue_empty()) {
+/*    if(!THEKERNEL->conveyor->is_queue_empty()) {
         stream->printf("upload not allowed while printing or busy\n");
         return;
     }
-
+*/
     // open file to upload to
     string upload_filename = absolute_from_relative( parameters );
     FILE *fd = fopen(upload_filename.c_str(), "w");
@@ -452,10 +417,10 @@ void SimpleShell::save_command( string parameters, StreamOutput *stream )
     }
 
     // issue a M500 which will store values in the file stream
-    Gcode *gcode = new Gcode("M500", gs);
-    THEKERNEL->call_event(ON_GCODE_RECEIVED, gcode );
+//    Gcode *gcode = new Gcode("M500", gs);
+//    THEKERNEL->call_event(ON_GCODE_RECEIVED, gcode );
     delete gs;
-    delete gcode;
+//    delete gcode;
 
     stream->printf("Settings Stored to %s\r\n", filename.c_str());
 }
@@ -546,64 +511,16 @@ void SimpleShell::get_command( string parameters, StreamOutput *stream)
 {
     string what = shift_parameter( parameters );
     void *returned_data;
-
-    if (what == "temp") {
-        string type = shift_parameter( parameters );
-        bool ok = PublicData::get_value( temperature_control_checksum, get_checksum(type), current_temperature_checksum, &returned_data );
-
-        if (ok) {
-            struct pad_temperature temp =  *static_cast<struct pad_temperature *>(returned_data);
-            stream->printf("%s temp: %f/%f @%d\r\n", type.c_str(), temp.current_temperature, temp.target_temperature, temp.pwm);
-        } else {
-            stream->printf("%s is not a known temperature device\r\n", type.c_str());
-        }
-
-    } else if (what == "pos") {
-        bool ok = PublicData::get_value( robot_checksum, current_position_checksum, &returned_data );
-
-        if (ok) {
-            float *pos = static_cast<float *>(returned_data);
-            stream->printf("Position X: %f, Y: %f, Z: %f\r\n", pos[0], pos[1], pos[2]);
-
-        } else {
-            stream->printf("get pos command failed\r\n");
-        }
-    }
 }
 
 // used to test out the get public data events
 void SimpleShell::set_temp_command( string parameters, StreamOutput *stream)
 {
-    string type = shift_parameter( parameters );
-    string temp = shift_parameter( parameters );
-    float t = temp.empty() ? 0.0 : strtof(temp.c_str(), NULL);
-    bool ok = PublicData::set_value( temperature_control_checksum, get_checksum(type), &t );
-
-    if (ok) {
-        stream->printf("%s temp set to: %3.1f\r\n", type.c_str(), t);
-    } else {
-        stream->printf("%s is not a known temperature device\r\n", type.c_str());
-    }
 }
 
 // used to test out the get public data events for switch
 void SimpleShell::switch_command( string parameters, StreamOutput *stream)
 {
-    string type = shift_parameter( parameters );
-    string value = shift_parameter( parameters );
-    bool ok = false;
-    if(value == "on" || value == "off") {
-        bool b = value == "on";
-        ok = PublicData::set_value( switch_checksum, get_checksum(type), state_checksum, &b );
-    } else {
-        float v = strtof(value.c_str(), NULL);
-        ok = PublicData::set_value( switch_checksum, get_checksum(type), value_checksum, &v );
-    }
-    if (ok) {
-        stream->printf("switch %s set to: %s\r\n", type.c_str(), value.c_str());
-    } else {
-        stream->printf("%s is not a known switch device\r\n", type.c_str());
-    }
 }
 
 void SimpleShell::help_command( string parameters, StreamOutput *stream )
