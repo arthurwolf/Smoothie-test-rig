@@ -24,13 +24,10 @@ class Pauser;
 class SerialConsole;
 class StreamOutputPool;
 class GcodeDispatch;
-class Robot;
-class Stepper;
-class Planner;
 class StepTicker;
 class Adc;
 class PublicData;
-class TemperatureControlPool;
+class Tester;
 
 class Kernel {
     public:
@@ -47,13 +44,10 @@ class Kernel {
         SerialConsole*    serial;
         StreamOutputPool* streams;
 
-        Robot*            robot;
-        Stepper*          stepper;
-        Planner*          planner;
         Config*           config;
-        Conveyor*         conveyor;
         Pauser*           pauser;
-        TemperatureControlPool* temperature_control_pool;
+
+        Tester*           tester;
 
         int debug;
         SlowTicker*       slow_ticker;

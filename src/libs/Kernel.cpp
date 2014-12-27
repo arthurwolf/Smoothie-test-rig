@@ -20,6 +20,8 @@
 #include "libs/PublicData.h"
 #include "modules/communication/SerialConsole.h"
 
+#include "modules/tools/tester/Tester.h"
+
 #include <malloc.h>
 #include <array>
 
@@ -123,6 +125,10 @@ Kernel::Kernel(){
     this->step_ticker->set_reset_delay( microseconds_per_step_pulse );
     this->step_ticker->set_frequency( this->base_stepping_frequency );
     this->step_ticker->set_acceleration_ticks_per_second(acceleration_ticks_per_second); // must be set after set_frequency
+
+    // Add the tester module
+    this->tester = new Tester();
+    this->add_module( this->tester );
 
 }
 
