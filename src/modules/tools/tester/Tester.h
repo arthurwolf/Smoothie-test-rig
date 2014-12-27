@@ -27,6 +27,8 @@ class Tester : public Module{
         Pin orange_button_pin;
         Pin red_button_pin;
 
+        Pin logic_switch_pin;
+
         bool green_button_state;
 
 };

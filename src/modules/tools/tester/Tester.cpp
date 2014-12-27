@@ -23,6 +23,7 @@
 #define green_button_pin_checksum            CHECKSUM("green_button_pin")
 #define orange_button_pin_checksum           CHECKSUM("orange_button_pin")
 #define red_button_pin_checksum              CHECKSUM("red_button_pin")
+#define logic_switch_pin_checksum            CHECKSUM("logic_switch_pin")
 
 Tester::Tester(){
 }
@@ -49,6 +50,10 @@ void Tester::on_module_loaded() {
     this->orange_button_pin.from_string( THEKERNEL->config->value(tester_checksum, orange_button_pin_checksum )->by_default("1.23")->as_string())->as_input();
     this->red_button_pin.from_string(    THEKERNEL->config->value(tester_checksum, red_button_pin_checksum    )->by_default("1.24")->as_string())->as_input();
 
+    // Power supply switch pins
+    this->logic_switch_pin.from_string(  THEKERNEL->config->value(tester_checksum, logic_switch_pin_checksum  )->by_default("0.4")->as_string())->as_output();
+    this->logic_switch_pin.set(false);
+
     // Button states
     this->green_button_state = true;
 
@@ -74,5 +79,12 @@ void Tester::test_process(){
     // Reset the status pins
     this->red_led_pin.set(false);
     this->green_led_pin.set(false);
+
+    // Turn the target Smoothieboard ON
+    this->logic_switch_pin.set(true);
+
+
+
+
 
 }
