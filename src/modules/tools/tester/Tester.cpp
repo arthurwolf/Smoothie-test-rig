@@ -14,6 +14,7 @@
 #include "checksumm.h"
 #include "ConfigValue.h"
 #include "libs/Pin.h"
+#include "mbed.h"
 
 #define tester_module_enable_checksum        CHECKSUM("tester_module_enable")
 #define tester_checksum                      CHECKSUM("tester")
@@ -60,6 +61,9 @@ void Tester::on_module_loaded() {
     // Register for events
     this->register_for_event(ON_MAIN_LOOP);
 
+    // Make the downstream ( to the tested Smoothieboard ) Com object
+    this->com = new Com();
+
 }
 
 void Tester::on_main_loop(void *argument){
@@ -73,6 +77,9 @@ void Tester::on_main_loop(void *argument){
 }
 
 void Tester::test_process(){
+    // A new test is starting
+    this->log("info : New test starting\n");
+    
     // Set the orange pin ON, indicating testing is on-going
     this->orange_led_pin.set(true);
     
@@ -80,11 +87,62 @@ void Tester::test_process(){
     this->red_led_pin.set(false);
     this->green_led_pin.set(false);
 
+    // Flush the serial port
+    this->com->flush();
+
     // Turn the target Smoothieboard ON
     this->logic_switch_pin.set(true);
+    
+    // We wait for the welcome messages from the target Smoothieboard
+    this->log("info : Waiting for welcome messages\n");
 
+    string first_line, second_line, third_line, extra_line;
+    bool got_first_line = this->com->get_line(&first_line, 5000);
+    bool got_second_line = this->com->get_line(&second_line, 5000);
+    bool got_third_line = this->com->get_line(&third_line, 5000);
+    bool got_extra_line = this->com->get_line(&extra_line, 2000);
+
+    if( got_first_line ){
+        this->received(first_line);
+    }else{ 
+        this->log("error: Did not receive the first welcome line\n");
+    }
+    if( got_second_line ){ 
+        this->received(second_line);
+    }else{ 
+        this->log("error: Did not receive the second welcome line\n");
+    } 
+    if( got_third_line ){
+        this->received(third_line);
+    }else{ 
+        this->log("error: Did not receive the third welcome line\n");
+    }
+    if( got_extra_line ){
+        this->received(third_line);
+        this->log("error: Received one line too many\n");
+    }else{
+        this->log("info : Did not get any extra lines, end of welcome messages\n");
+    }
+
+    // At this point we received the welcome message so the board is working correctly
 
 
 
 
 }
+
+void Tester::received(string received){
+    this->log("< rcv : '%s'\n", received.c_str());
+}
+
+void Tester::log(const char * format, ...){
+    char buffer[256];
+    va_list args;
+    va_start (args, format);
+    vsprintf (buffer,format, args);
+    THEKERNEL->streams->printf("%s", buffer);
+    va_end (args);
+}
+
+
+

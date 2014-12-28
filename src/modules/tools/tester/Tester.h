@@ -10,6 +10,7 @@
 
 #include "libs/Module.h"
 #include "Pin.h"
+#include "Com.h"
 
 class Tester : public Module{
     public:
@@ -18,6 +19,8 @@ class Tester : public Module{
         void on_module_loaded();
         void on_main_loop(void* argument);
         void test_process();
+        void received(string received);
+        void log(const char * format, ...);
 
     private:
         Pin green_led_pin;
@@ -30,6 +33,8 @@ class Tester : public Module{
         Pin logic_switch_pin;
 
         bool green_button_state;
+
+        Com* com;
 
 };
 
