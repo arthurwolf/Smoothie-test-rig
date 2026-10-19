@@ -42,6 +42,7 @@ USBSerial::USBSerial(USB *u): USBCDC(u), rxbuf(256), txbuf(128 + 8)
     halt_flag = false;
     query_flag = false;
     last_char_was_cr = false;
+    at_line_start = true;
 }
 
 bool USBSerial::ensure_tx_space(int space)
@@ -217,7 +218,9 @@ bool USBSerial::USBEvent_EPOut(uint8_t bEP, uint8_t bEPStatus)
             continue;
         }
 
-        if(THEKERNEL->is_feed_hold_enabled()) {
+        // ! and ~ are only realtime commands at the start of a line, anywhere else they are part of the line
+        // (e.g. an inverted pin in "config-set sd alpha_step_pin 2.1!")
+        if(at_line_start && THEKERNEL->is_feed_hold_enabled()) {
             if(b == '!') { // safe pause
                 THEKERNEL->set_feed_hold(true);
                 continue;
@@ -236,6 +239,7 @@ bool USBSerial::USBEvent_EPOut(uint8_t bEP, uint8_t bEPStatus)
         }
 
         last_char_was_cr = (b=='\r');
+        at_line_start = (b == '\n' || b == '\r');
 
         if (flush_to_nl == false)
             rxbuf.iqueue(b);

@@ -67,6 +67,10 @@ protected:
     // this makes it trivial to detect if there's a new line available
     volatile int nl_in_rx;
 
+    // true until the first character of a line is received, only written from the receive interrupt
+    // (kept out of the bit field below which is also written from the main loop)
+    volatile bool at_line_start;
+
 
     volatile struct {
         volatile bool attach:1;
